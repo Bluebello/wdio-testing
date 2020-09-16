@@ -20,7 +20,7 @@ exports.config = {
     // NPM script (see https://docs.npmjs.com/cli/run-script) then the current working
     // directory is where your package.json resides, so `wdio` will be called from there.
     //
-    specs: ['./test/e2e-exchange.js'],
+    specs: ['./test/login.test.js'],
 
     // Patterns to exclude.
     exclude: ['./test/examples.js', './test/actions.js'],
@@ -54,11 +54,12 @@ exports.config = {
         maxInstances: 1,
         //
         browserName: config.browser,
-        acceptInsecureCerts: true
+        acceptInsecureCerts: true,
         // If outputDir is provided WebdriverIO can capture driver session logs
         // it is possible to configure which logTypes to include/exclude.
         // excludeDriverLogs: ['*'], // pass '*' to exclude all driver session logs
         // excludeDriverLogs: ['bugreport', 'server'],
+        browserstackLocal : true,
     }],
     //
     // ===================
@@ -107,7 +108,10 @@ exports.config = {
     // Services take over a specific job you don't want to take care of. They enhance
     // your test setup with almost no effort. Unlike plugins, they don't add new
     // commands. Instead, they hook themselves up into the test process.
-    services: ['chromedriver'],
+    services: ['browserstack'],
+    user: config.BROWSERSTACK_USERNAME,
+    key: config.BROWSERSTACK_KEY,
+    browserstackLocal: true,
     
     // Framework you want to run your specs with.
     // The following are supported: Mocha, Jasmine, and Cucumber
@@ -136,6 +140,7 @@ exports.config = {
         timeout: 60000,
         require: ['@babel/register'],
     },
+
     //
     // =====
     // Hooks
@@ -177,8 +182,42 @@ exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      * @param {Array.<String>} specs List of spec file paths that are to be run
      */
-    // before: function (capabilities, specs) {
-    // },
+    before: function (capabilities, specs) {
+        require('@babel/register')
+
+        browser.addCommand('waitAndClick', function (selector) {
+            try{
+                $(selector).waitForExist(),
+                $(selector).click()
+
+            } catch (error){
+              throw new Error ('Could not click on selector: ${selector}')
+            }
+            
+        }),
+
+        browser.addCommand('waitAndText', function (selector, text) {
+            try {
+                $(selector).waitForExist(),
+                $(selector).setValue(text)
+
+            } catch (error){
+                throw new Error ("Could not set text into selector ${selector}")
+            }
+
+        }),
+
+            browser.addCommand('wait', function (selector) {
+                try{
+
+                    $(selector).waitForExist()
+
+                } catch (error){
+                    throw new Error ("Could not found a selector ${selector}")
+                }
+
+            })
+    },
     /**
      * Runs before a WebdriverIO command gets executed.
      * @param {String} commandName hook command name
